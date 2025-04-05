@@ -170,35 +170,117 @@ app.post('/telegram', async (req, res) => {
     
     console.log(`Received Telegram message from chat ${chatId}: ${messageText}`);
     
+    // Return 200 OK immediately to acknowledge receipt of the webhook
+    res.status(200).send('OK');
+    
+    // Check if we have a token to send responses
+    if (!TELEGRAM_BOT_TOKEN) {
+      console.error('TELEGRAM_BOT_TOKEN not set, cannot respond to message');
+      return;
+    }
+    
+    // Send "Thinking..." message immediately
+    let thinkingMsgId = null;
     try {
-      // Generate response using Ollama
-      const response = await generateOllamaResponse(messageText);
-      
-      // Check if we have a token to send responses
-      if (!TELEGRAM_BOT_TOKEN) {
-        console.error('TELEGRAM_BOT_TOKEN not set, cannot respond to message');
-        return res.status(200).send('OK');
-      }
-      
-      // Send response back to Telegram
-      const telegramResponse = await axios.post(
+      const thinkingResponse = await axios.post(
         `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
         {
           chat_id: chatId,
-          text: response,
+          text: "Thinking...",
           parse_mode: 'Markdown'
         }
       );
       
-      console.log(`Sent response to Telegram chat ${chatId}:`, telegramResponse.status);
-      res.status(200).send('OK');
-    } catch (error) {
-      console.error('Error processing Telegram message:', error.message);
-      res.status(500).json({ error: 'Failed to process Telegram message' });
+      if (thinkingResponse.data && thinkingResponse.data.result && thinkingResponse.data.result.message_id) {
+        thinkingMsgId = thinkingResponse.data.result.message_id;
+        console.log(`Sent "Thinking..." message to chat ${chatId}, message_id: ${thinkingMsgId}`);
+      }
+    } catch (telegramError) {
+      console.error('Error sending "Thinking..." message:', telegramError.message);
+      // We continue even if the thinking message failed
     }
+    
+    // Process the message with the LLM asynchronously
+    generateOllamaResponse(messageText)
+      .then(async (llmResponse) => {
+        try {
+          // If we have a thinking message ID, edit it
+          if (thinkingMsgId) {
+            try {
+              await axios.post(
+                `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editMessageText`,
+                {
+                  chat_id: chatId,
+                  message_id: thinkingMsgId,
+                  text: llmResponse,
+                  parse_mode: 'Markdown'
+                }
+              );
+              console.log(`Updated "Thinking..." message with LLM response in chat ${chatId}`);
+            } catch (editError) {
+              console.error('Error editing message, sending new message instead:', editError.message);
+              
+              // If editing fails, try to send a new message
+              await axios.post(
+                `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+                {
+                  chat_id: chatId,
+                  text: llmResponse,
+                  parse_mode: 'Markdown'
+                }
+              );
+              console.log(`Sent new message with LLM response to chat ${chatId}`);
+            }
+          } else {
+            // If we don't have a thinking message ID, send a new message
+            await axios.post(
+              `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+              {
+                chat_id: chatId,
+                text: llmResponse,
+                parse_mode: 'Markdown'
+              }
+            );
+            console.log(`Sent response to Telegram chat ${chatId}`);
+          }
+        } catch (telegramError) {
+          console.error('Error sending response to Telegram:', telegramError.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error generating LLM response:', error.message);
+        
+        // Try to notify the user about the error
+        try {
+          const errorMsg = thinkingMsgId ? 
+            axios.post(
+              `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editMessageText`,
+              {
+                chat_id: chatId,
+                message_id: thinkingMsgId,
+                text: "Sorry, I encountered an error processing your request.",
+                parse_mode: 'Markdown'
+              }
+            ) :
+            axios.post(
+              `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+              {
+                chat_id: chatId,
+                text: "Sorry, I encountered an error processing your request.",
+                parse_mode: 'Markdown'
+              }
+            );
+        } catch (notifyError) {
+          console.error('Failed to send error notification to user:', notifyError.message);
+        }
+      });
+      
   } catch (error) {
     console.error('Error in Telegram webhook endpoint:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    // Ensure we return 200 OK even in case of errors
+    if (!res.headersSent) {
+      res.status(200).send('OK');
+    }
   }
 });
 

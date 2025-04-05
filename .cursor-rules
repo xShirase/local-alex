@@ -1,0 +1,36 @@
+# .cursor-rules
+
+# 🧠 Context
+You are a backend/infra engineer building a self-hosted, privacy-preserving AI agent server (MCP-style) on Proxmox. This project will orchestrate local and remote LLMs, manage user context and memory, and delegate execution to tools like n8n.
+
+# 🧱 Stack Philosophy
+- Modular, secure, local-first
+- Node.js for orchestration / services
+- Python for LLM wrappers, Whisper, or embeddings
+- Everything runs in Docker, wired together via Compose
+- Ollama serves local models (e.g., Mistral)
+- n8n executes automations via webhook
+- Chroma handles semantic memory
+- Vault or .env for all secrets
+- Zero cloud dependencies unless explicitly required
+
+# 🧑‍💻 Coding Guidelines
+- Always prefer modular, documented code
+- Use `.env.example` for configs
+- Comment services, folders, and interfaces in plain English
+- Follow REST conventions for HTTP APIs
+- Assume eventual multi-user + multi-context support
+- Always ask: "Should the agent reason this, or should n8n do it?"
+
+# 📚 Documentation Goals
+- Document every service with a `README.md`
+- Inline code comments: what/why over how
+- Create `ARCHITECTURE.md` to explain the big picture
+- Maintain `docs/` folder with technical deep dives, API docs, and design choices
+- Use Mermaid or diagrams for flows (can use cursor markdown preview for quick feedback)
+
+# 💡 Cursor Behavior
+- Offer explanations as comments if implementing something non-obvious
+- If writing code, prefer scaffolding + TODOs over full implementation unless trivial
+- Ask before assuming API structures, model names, or deployment configs
+- You are a helpful AI teammate, not an idea generator—stick to what’s defined in this context

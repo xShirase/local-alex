@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  #######################################
+  # n8n - Workflow Automation Engine
+  # Handles tool execution and API integrations
+  #######################################
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: mcp-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_HOST=localhost
+      # Load credentials from .env
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-password}
+      - NODE_ENV=production
+    volumes:
+      - ./services/n8n/data:/home/node/.n8n
+    networks:
+      - mcp-network
+
+  #######################################
+  # Ollama - Local LLM Inference Server
+  # Serves models like mistral, llama2, etc.
+  #######################################
+  ollama:
+    image: ollama/ollama:latest
+    container_name: mcp-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./services/ollama/data:/root/.ollama
+    networks:
+      - mcp-network
+
+  #######################################
+  # ChromaDB - Vector Database
+  # Stores embeddings for semantic search and memory
+  #######################################
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: mcp-chromadb
+    restart: unless-stopped
+    volumes:
+      - ./services/chromadb/data:/chroma/data
+    environment:
+      - CHROMA_SERVER_AUTH_PROVIDER=chromadb.auth.token.TokenAuthServerProvider
+      - CHROMA_SERVER_AUTH_CREDENTIALS_FILE=/chroma/data/credentials.json
+      - CHROMA_SERVER_AUTH_TOKEN_TRANSPORT_HEADER=X-Chroma-Token
+    # Internal only, not exposed to host
+    networks:
+      - mcp-network
+
+  #######################################
+  # Agent API - Core Orchestration Service
+  # Routes between user input, LLMs, memory, and tools
+  #######################################
+  agent-api:
+    build:
+      context: ./services/agent-api
+      dockerfile: Dockerfile
+    container_name: mcp-agent-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - OLLAMA_HOST=http://ollama:11434
+      - CHROMA_HOST=http://chromadb:8000
+      - N8N_HOST=http://n8n:5678
+    volumes:
+      - ./services/agent-api:/app
+    depends_on:
+      - ollama
+      - chromadb
+      - n8n
+    networks:
+      - mcp-network
+
+  #######################################
+  # Whisper - Voice Transcription (OPTIONAL)
+  # Uncomment to enable voice transcription
+  #######################################
+  # whisper:
+  #   build:
+  #     context: ./services/whisper
+  #     dockerfile: Dockerfile
+  #   container_name: mcp-whisper
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9000:9000"
+  #   volumes:
+  #     - ./services/whisper:/app
+  #   networks:
+  #     - mcp-network
+
+  #######################################
+  # Vault - Secret Management (OPTIONAL)
+  # Uncomment to enable HashiCorp Vault for secrets
+  #######################################
+  # vault:
+  #   image: hashicorp/vault:latest
+  #   container_name: mcp-vault
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8200:8200"
+  #   environment:
+  #     - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_DEV_ROOT_TOKEN_ID:-dev-only-token}
+  #   cap_add:
+  #     - IPC_LOCK
+  #   volumes:
+  #     - ./services/vault/data:/vault/data
+  #   networks:
+  #     - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge 

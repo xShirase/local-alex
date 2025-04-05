@@ -9,7 +9,6 @@ services:
     image: n8nio/n8n:latest
     container_name: mcp-n8n
     restart: unless-stopped
-    command: n8n start
     ports:
       - "5678:5678"
     environment:
@@ -21,7 +20,7 @@ services:
       - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-password}
       - NODE_ENV=production
     volumes:
-      - ./services/n8n/data:/home/node/.n8n
+      - n8n_data:/home/node/.n8n
     networks:
       - mcp-network
 
@@ -123,4 +122,8 @@ services:
 
 networks:
   mcp-network:
-    driver: bridge 
+    driver: bridge
+
+volumes:
+  n8n_data:
+    driver: local 

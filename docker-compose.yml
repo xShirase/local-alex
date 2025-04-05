@@ -76,6 +76,7 @@ services:
       - N8N_HOST=http://n8n:5678
     volumes:
       - ./services/agent-api:/app
+      - /app/node_modules
     depends_on:
       - ollama
       - chromadb

@@ -8,6 +8,7 @@ const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://ollama:11434';
 const DEFAULT_LOCAL_MODEL = process.env.DEFAULT_LOCAL_MODEL || 'mistral';
 const CHROMA_HOST = process.env.CHROMA_HOST || 'http://chromadb:8000';
 const N8N_HOST = process.env.N8N_HOST || 'http://n8n:5678';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
 const app = express();
 
@@ -109,6 +110,98 @@ app.post('/chat', async (req, res) => {
   }
 });
 
+/**
+ * Helper function to generate a response from Ollama
+ * @param {string} message - The message to send to Ollama
+ * @returns {Promise<string>} - The response from Ollama
+ */
+async function generateOllamaResponse(message) {
+  try {
+    console.log(`Sending request to Ollama at ${OLLAMA_HOST}/api/generate with model ${DEFAULT_LOCAL_MODEL}`);
+    console.log('Sending to Ollama:', { model: DEFAULT_LOCAL_MODEL, prompt: message });
+    
+    const ollamaResponse = await axios.post(`${OLLAMA_HOST}/api/generate`, {
+      model: DEFAULT_LOCAL_MODEL,
+      prompt: message
+    }, {
+      responseType: 'text' // Get raw text response to handle line-by-line JSON
+    });
+    
+    console.log('Received response from Ollama:', ollamaResponse.status);
+    
+    // Parse the response - Ollama returns newline-delimited JSON objects
+    const responseLines = ollamaResponse.data.split('\n').filter(line => line.trim() !== '');
+    let fullResponse = '';
+    
+    // Combine all response tokens
+    responseLines.forEach(line => {
+      try {
+        const parsedLine = JSON.parse(line);
+        if (parsedLine.response) {
+          fullResponse += parsedLine.response;
+        }
+      } catch (err) {
+        console.error('Error parsing response line:', err);
+      }
+    });
+    
+    console.log('Combined response:', fullResponse);
+    return fullResponse || 'No response from model';
+  } catch (error) {
+    console.error('Error generating Ollama response:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Telegram webhook endpoint
+ * Handles incoming messages from Telegram and responds using the LLM
+ */
+app.post('/telegram', async (req, res) => {
+  try {
+    // Check if the request contains a message
+    if (!req.body.message || !req.body.message.text || !req.body.message.chat || !req.body.message.chat.id) {
+      console.log('Received incomplete Telegram webhook, ignoring');
+      return res.status(200).send('OK');
+    }
+    
+    const messageText = req.body.message.text;
+    const chatId = req.body.message.chat.id;
+    
+    console.log(`Received Telegram message from chat ${chatId}: ${messageText}`);
+    
+    try {
+      // Generate response using Ollama
+      const response = await generateOllamaResponse(messageText);
+      
+      // Check if we have a token to send responses
+      if (!TELEGRAM_BOT_TOKEN) {
+        console.error('TELEGRAM_BOT_TOKEN not set, cannot respond to message');
+        return res.status(200).send('OK');
+      }
+      
+      // Send response back to Telegram
+      const telegramResponse = await axios.post(
+        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+        {
+          chat_id: chatId,
+          text: response,
+          parse_mode: 'Markdown'
+        }
+      );
+      
+      console.log(`Sent response to Telegram chat ${chatId}:`, telegramResponse.status);
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error('Error processing Telegram message:', error.message);
+      res.status(500).json({ error: 'Failed to process Telegram message' });
+    }
+  } catch (error) {
+    console.error('Error in Telegram webhook endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`MCP Agent API running on port ${PORT}`);
@@ -116,5 +209,6 @@ app.listen(PORT, () => {
   - Ollama: ${OLLAMA_HOST} (Using model: ${DEFAULT_LOCAL_MODEL})
   - ChromaDB: ${CHROMA_HOST}
   - n8n: ${N8N_HOST}
+  - Telegram Bot: ${TELEGRAM_BOT_TOKEN ? 'Configured' : 'Not configured'}
   `);
 }); 

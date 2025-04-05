@@ -70,7 +70,7 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - docker/.env
+      - .env
     environment:
       - NODE_ENV=development
       - OLLAMA_HOST=http://ollama:11434

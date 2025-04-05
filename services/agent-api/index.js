@@ -211,4 +211,4 @@ app.listen(PORT, () => {
   - n8n: ${N8N_HOST}
   - Telegram Bot: ${TELEGRAM_BOT_TOKEN ? 'Configured' : 'Not configured'}
   `);
-}); 
+});

@@ -7,6 +7,7 @@ This guide covers setting up the Phase 0 environment for the MCP Agent Server, a
 - Docker and Docker Compose
 - Git
 - Node.js 18+ (for local development)
+- A Telegram Bot Token (optional, for Telegram integration)
 
 ## Quick Start
 
@@ -56,6 +57,29 @@ curl -X POST http://localhost:3000/chat \
   -d '{"message": "Hello, agent", "userId": "default", "context": "personal"}'
 ```
 
+### 4. Configure Telegram Bot (Optional)
+
+To set up the Telegram integration:
+
+1. Talk to [@BotFather](https://t.me/botfather) on Telegram to create a new bot
+2. Obtain your bot token and set it in your `.env` file:
+   ```
+   TELEGRAM_BOT_TOKEN=your_bot_token_here
+   ```
+3. If your server is publicly accessible, set up a webhook:
+   ```bash
+   curl -F "url=https://your-domain.com/telegram" \
+        https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook
+   ```
+4. For local development, you may need to use a service like ngrok to expose your local server:
+   ```bash
+   ngrok http 3000
+   # Then use the ngrok URL in your webhook
+   curl -F "url=https://your-ngrok-url.ngrok.io/telegram" \
+        https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook
+   ```
+5. Send a message to your bot on Telegram to test the integration
+
 ## Docker Volumes
 
 The stack uses these persistent volumes:
@@ -64,10 +88,21 @@ The stack uses these persistent volumes:
 - `./services/ollama/data`: LLM model weights
 - `./services/chromadb/data`: Vector embeddings and memory
 
+## Environment Variables
+
+Key environment variables to configure:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `N8N_BASIC_AUTH_USER` | Username for n8n access | admin |
+| `N8N_BASIC_AUTH_PASSWORD` | Password for n8n access | password |
+| `DEFAULT_LOCAL_MODEL` | Default Ollama model to use | mistral |
+| `TELEGRAM_BOT_TOKEN` | Token for Telegram bot integration | (none) |
+
 ## Next Steps
 
 After Phase 0 is running successfully:
 
 1. Move to Phase 1: Implement Google Calendar integrations via n8n
 2. Build the agent's context and memory management
-3. Extend the `/chat` endpoint with real LLM integration 
+3. Enhance integrations with additional messaging platforms 

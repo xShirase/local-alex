@@ -5,7 +5,7 @@ This project is a privacy-first, self-hosted agent platform built on a modular a
 ## 💡 Overview
 
 The system acts as an intelligent assistant that:
-- Accepts input from browser, CLI, voice, or API
+- Accepts input from browser, CLI, voice, API, or Telegram
 - Differentiates between **personal** and **work** contexts
 - Uses **local LLMs** where possible, **API fallback** where necessary
 - Delegates execution (e.g., sending a calendar invite) to **n8n**
@@ -13,14 +13,14 @@ The system acts as an intelligent assistant that:
 
 ## 📦 Components
 
-| Service       | Description                                   |
-|---------------|-----------------------------------------------|
-| `n8n`         | Orchestration and external API execution      |
-| `ollama`      | Local model runtime for LLM inference         |
-| `chromadb`    | Vector memory (long-term, user/context aware) |
-| `agent-api`   | Core orchestrator backend                     |
-| `frontend`    | (Optional) UI for chat + voice I/O            |
-| `whisper`     | (Optional) Voice transcription service        |
+| Service       | Description                                     |
+|---------------|-------------------------------------------------|
+| `n8n`         | Orchestration and external API execution        |
+| `ollama`      | Local model runtime for LLM inference           |
+| `chromadb`    | Vector memory (long-term, user/context aware)   |
+| `agent-api`   | Core orchestrator backend with Telegram support |
+| `frontend`    | (Optional) UI for chat + voice I/O              |
+| `whisper`     | (Optional) Voice transcription service          |
 
 ---
 
@@ -30,7 +30,8 @@ The system acts as an intelligent assistant that:
 ✅ Local LLM running via Ollama  
 ✅ ChromaDB running with persistent volume  
 ✅ Agent API accepting prompts and returning completions  
-✅ n8n accessible for automations and flow building
+✅ n8n accessible for automations and flow building  
+✅ Telegram bot integration for messaging
 
 ---
 
@@ -66,5 +67,21 @@ This system avoids unnecessary cloud reliance and emphasizes:
 git clone your-repo-url
 cd mcp-agent-server
 cp .env.example .env
+# Configure your environment variables including TELEGRAM_BOT_TOKEN if needed
 docker-compose up -d
-```*
+```
+
+---
+
+## 📱 Messaging Integrations
+
+The agent supports the following messaging platforms:
+
+### Telegram
+
+Set up a Telegram bot and integrate it with your MCP Agent:
+
+1. Talk to [@BotFather](https://t.me/botfather) on Telegram to create a new bot
+2. Obtain your bot token and add it to your `.env` file as `TELEGRAM_BOT_TOKEN`
+3. Set your webhook URL to: `https://your-server/telegram`
+4. Start chatting with your bot on Telegram!

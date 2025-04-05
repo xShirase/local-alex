@@ -9,7 +9,7 @@ mcp-agent-server/
 │   └── .env.example         # Environment variable templates
 ├── services/
 │   ├── agent-api/           # Core orchestration service
-│   │   ├── index.js         # Main API entry point
+│   │   ├── index.js         # Main API entry point with REST API and Telegram integration
 │   │   ├── package.json     # Node.js dependencies
 │   │   └── Dockerfile       # Container build instructions
 │   ├── n8n/                 # Workflow automation engine
@@ -32,10 +32,11 @@ mcp-agent-server/
 
 The agent-api service is the core orchestration layer that:
 - Receives user input via HTTP endpoints
+- Processes incoming messages from Telegram via webhooks
 - Routes requests to the appropriate LLM (Ollama/local by default)
 - Manages context and memory storage (ChromaDB)
 - Delegates tools execution (via n8n webhooks)
-- Returns responses to the user
+- Returns responses to the user through various channels (API, Telegram)
 
 ### n8n
 
@@ -59,10 +60,19 @@ ChromaDB stores vector embeddings for:
 - Semantic search capabilities
 - Context-aware recall
 
+## API Endpoints
+
+The agent-api service exposes these main endpoints:
+
+- `GET /health` - Health check endpoint
+- `POST /chat` - Core chat API for direct integration
+- `POST /telegram` - Webhook endpoint for Telegram bot integration
+
 ## Future Extensions
 
 The modular design allows adding new services:
 - Whisper for voice transcription
 - Vault for secrets management
 - Custom tool services
-- Web UI or frontend clients 
+- Web UI or frontend clients
+- Additional messaging integrations (Discord, Slack, etc.) 

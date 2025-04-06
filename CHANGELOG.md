@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.4] - 2025-04-06
+
+### Added
+- Tools registry system
+  - Created `tools/registry.js` module for managing tool definitions
+  - Added support for loading tools from a JSON configuration file
+  - Implemented validation for tool definitions
+  - Added helper functions for accessing tools
+  - Created sample tool definitions for calendar, weather, and search
+
 ## [0.2.3] - 2025-04-06
 
 ### Changed

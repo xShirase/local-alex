@@ -12,6 +12,9 @@ mcp-agent-server/
 │   │   ├── index.js         # Main API entry point with REST API and Telegram integration
 │   │   ├── memory/          # Memory management modules
 │   │   │   └── memory.js    # ChromaDB integration for memory storage and retrieval
+│   │   ├── tools/           # Tool management modules
+│   │   │   ├── registry.js  # Tool registry for loading and validating tools
+│   │   │   └── tools.json   # Tool definitions in JSON format
 │   │   ├── package.json     # Node.js dependencies
 │   │   └── Dockerfile       # Container build instructions
 │   ├── n8n/                 # Workflow automation engine
@@ -61,6 +64,22 @@ ChromaDB stores vector embeddings for:
 - Long-term memory storage
 - Semantic search capabilities
 - Context-aware recall
+
+## Modules
+
+### memory
+
+The memory module handles persistent storage of conversations and knowledge:
+- Stores and retrieves information from ChromaDB
+- Provides vector-based semantic search
+- Manages context-aware memory organization
+
+### tools
+
+The tools module manages available tools for the agent:
+- Loads tool definitions from configuration files
+- Validates tool parameters and endpoints
+- Will support dynamic discovery of tools via well-known endpoints
 
 ## API Endpoints
 

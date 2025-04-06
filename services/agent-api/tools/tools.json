@@ -1,0 +1,65 @@
+[
+  {
+    "name": "calendar_create_event",
+    "description": "Create a new calendar event",
+    "parameters": {
+      "title": {
+        "type": "string",
+        "description": "The title of the event"
+      },
+      "start": {
+        "type": "string",
+        "description": "Start time in ISO format (e.g., 2025-04-15T10:00:00)"
+      },
+      "end": {
+        "type": "string",
+        "description": "End time in ISO format (e.g., 2025-04-15T11:00:00)"
+      },
+      "description": {
+        "type": "string",
+        "description": "Optional description of the event"
+      },
+      "attendees": {
+        "type": "array",
+        "description": "Optional list of attendee email addresses",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "endpoint": "http://n8n:5678/webhook/calendar/create"
+  },
+  {
+    "name": "weather_current",
+    "description": "Get current weather information for a location",
+    "parameters": {
+      "location": {
+        "type": "string",
+        "description": "City name or address"
+      },
+      "units": {
+        "type": "string",
+        "description": "Units of measurement (metric, imperial)",
+        "default": "metric",
+        "enum": ["metric", "imperial"]
+      }
+    },
+    "endpoint": "http://n8n:5678/webhook/weather/current"
+  },
+  {
+    "name": "search_web",
+    "description": "Search the web for information",
+    "parameters": {
+      "query": {
+        "type": "string",
+        "description": "Search query"
+      },
+      "count": {
+        "type": "integer",
+        "description": "Number of results to return",
+        "default": 5
+      }
+    },
+    "endpoint": "http://n8n:5678/webhook/search"
+  }
+] 

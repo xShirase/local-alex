@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.3] - 2025-04-06
+
+### Changed
+- Refactored Telegram message storage
+  - Replaced direct ChromaDB calls with memory module
+  - Moved storage to happen after LLM response is sent
+  - Improved non-blocking async implementation with proper error handling
+  - Simplified code and reduced duplication
+
 ## [0.2.2] - 2025-04-06
 
 ### Added

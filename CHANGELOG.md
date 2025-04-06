@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.1] - 2025-04-06
+
+### Added
+- Direct memory storage API
+  - New `/remember` POST endpoint to store memories
+  - Accepts content, user ID, context, source, tags, and timestamp
+  - Validates required fields and handles errors properly
+  - Returns success/failure status with memory ID
+
 ## [0.2.0] - 2025-04-06
 
 ### Added

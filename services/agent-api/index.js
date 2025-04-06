@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const { insertMemory, queryMemory } = require('./memory/memory');
 
 // Environment variables
 const PORT = process.env.PORT || 3000;
@@ -326,6 +327,42 @@ app.post('/telegram', async (req, res) => {
     if (!res.headersSent) {
       res.status(200).send('OK');
     }
+  }
+});
+
+/**
+ * Memory storage endpoint
+ * Allows direct insertion of memories into the ChromaDB store
+ */
+app.post('/remember', async (req, res) => {
+  try {
+    const { content, userId, context, source, tags, timestamp } = req.body;
+    
+    // Validate required fields
+    if (!content) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+    
+    // Insert the memory using the memory module
+    const result = await insertMemory({
+      content,
+      userId,
+      context,
+      source,
+      tags,
+      timestamp
+    });
+    
+    if (result.success) {
+      console.log(`Successfully stored memory with ID: ${result.id}`);
+      return res.status(200).json(result);
+    } else {
+      console.error(`Failed to store memory: ${result.error}`);
+      return res.status(500).json({ error: `Failed to store memory: ${result.error}` });
+    }
+  } catch (error) {
+    console.error('Error in /remember endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

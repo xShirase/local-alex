@@ -13,6 +13,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Test coverage
+coverage/
+services/*/coverage/
+*.lcov
+
 # Logs
 logs/
 *.log

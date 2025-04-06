@@ -102,6 +102,9 @@ services:
       - ./services/mcp-google-workspace/config:/root/.config/google_workspace_mcp
     env_file:
       - .env
+    environment:
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     networks:
       - mcp-network
 

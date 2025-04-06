@@ -87,6 +87,25 @@ services:
       - mcp-network
 
   #######################################
+  # Google Workspace MCP - Google Services Integration
+  # Provides Gmail, GCal, and Drive tools
+  #######################################
+  google-workspace-mcp:
+    build:
+      context: ./services/mcp-google-workspace
+      dockerfile: Dockerfile
+    container_name: mcp-google-workspace
+    restart: unless-stopped
+    ports:
+      - "${GOOGLE_MCP_PORT:-8700}:8700"
+    volumes:
+      - ./services/mcp-google-workspace/config:/root/.config/google_workspace_mcp
+    env_file:
+      - .env
+    networks:
+      - mcp-network
+
+  #######################################
   # Whisper - Voice Transcription (OPTIONAL)
   # Uncomment to enable voice transcription
   #######################################

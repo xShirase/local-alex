@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.5] - 2025-04-06
+
+### Added
+- Tools injection in chat and Telegram endpoints
+  - Modified `/chat` endpoint to load tools and inject them into system prompt
+  - Updated `generateOllamaResponse` function used by Telegram webhook
+  - Added tool descriptions, parameters, and usage instructions to prompts
+  - Enhanced LLM context with available tools for better agent capabilities
+- Test suite enhancements
+  - Created comprehensive test coverage for tools injection
+  - Added mock tools for testing purposes
+  - Implemented Telegram webhook tests
+
 ## [0.2.4] - 2025-04-06
 
 ### Added

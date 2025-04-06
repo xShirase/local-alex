@@ -4,6 +4,9 @@ const MockAdapter = require('axios-mock-adapter');
 const axios = require('axios');
 const { createTestApp } = require('./test-utils');
 
+// Import tool registry mock
+const toolRegistry = require('../tools/registry');
+
 // Create axios mock adapter
 const mock = new MockAdapter(axios);
 
@@ -12,6 +15,9 @@ describe('POST /chat', () => {
 
   beforeEach(() => {
     app = createTestApp();
+    
+    // Spy on the tool loading function
+    jest.spyOn(toolRegistry, 'loadTools');
     
     // Mock the Ollama API response
     // Ollama returns newline-delimited JSON
@@ -31,6 +37,7 @@ describe('POST /chat', () => {
 
   afterEach(() => {
     mock.reset();
+    jest.restoreAllMocks();
   });
 
   it('should return a valid response format when given a valid message', async () => {
@@ -44,6 +51,9 @@ describe('POST /chat', () => {
       .post('/chat')
       .send(validInput);
 
+    // Verify tool loading was called
+    expect(toolRegistry.loadTools).toHaveBeenCalled();
+    
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('response', 'Hello there! How can I help you today?');
     expect(response.body).toHaveProperty('model');
@@ -76,6 +86,9 @@ describe('POST /chat', () => {
       .post('/chat')
       .send(minimalInput);
 
+    // Verify tool loading was called
+    expect(toolRegistry.loadTools).toHaveBeenCalled();
+    
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('userId', 'default');
     expect(response.body).toHaveProperty('context', 'personal');

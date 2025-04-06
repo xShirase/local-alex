@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const { insertMemory, queryMemory } = require('./memory/memory');
-const { loadTools } = require('./tools/registry');
+const { loadTools, getTool } = require('./tools/registry');
 
 // Environment variables
 const PORT = process.env.PORT || 3000;
@@ -105,13 +105,63 @@ app.post('/chat', async (req, res) => {
       
       console.log('Combined response:', fullResponse);
       
+      // Check if the LLM response contains a tool call (JSON format)
+      let toolResponse = null;
+      let finalResponse = fullResponse;
+      let toolUsed = false;
+      
+      try {
+        // Try to parse the response as JSON
+        const parsedResponse = JSON.parse(fullResponse.trim());
+        
+        // Check if it contains a tool name and parameters
+        if (parsedResponse.tool) {
+          console.log(`Tool call detected: ${parsedResponse.tool}`);
+          
+          // Get the tool definition
+          const tool = getTool(parsedResponse.tool);
+          
+          if (!tool) {
+            // Tool not found
+            finalResponse = `I tried to use the tool '${parsedResponse.tool}', but it doesn't exist. Here's what I know without using the tool: ${parsedResponse.fallback || "I'm unable to complete this request without the proper tool."}`;
+          } else if (!tool.endpoint) {
+            // Tool has no endpoint
+            finalResponse = `I tried to use the tool '${parsedResponse.tool}', but it doesn't have a valid endpoint. Here's what I know without using the tool: ${parsedResponse.fallback || "I'm unable to complete this request without a working tool."}`;
+          } else {
+            // Call the tool endpoint with the parameters
+            try {
+              console.log(`Calling tool endpoint: ${tool.endpoint}`);
+              const toolCallResponse = await axios.post(tool.endpoint, parsedResponse.parameters || {});
+              
+              // Successfully called the tool
+              toolResponse = toolCallResponse.data;
+              toolUsed = true;
+              
+              // Update the final response with the tool response
+              if (typeof toolResponse === 'object') {
+                finalResponse = `I used the ${tool.name} tool and got the following result:\n\n${JSON.stringify(toolResponse, null, 2)}`;
+              } else {
+                finalResponse = `I used the ${tool.name} tool and got the following result:\n\n${toolResponse}`;
+              }
+            } catch (toolError) {
+              console.error(`Error calling tool endpoint: ${toolError.message}`);
+              finalResponse = `I tried to use the tool '${parsedResponse.tool}', but encountered an error: ${toolError.message}. Here's what I know without using the tool: ${parsedResponse.fallback || "I'm unable to complete this request due to a tool error."}`;
+            }
+          }
+        }
+      } catch (jsonError) {
+        // Not JSON, just use the text response as is
+        console.log('Response is not in JSON format, using as text');
+      }
+      
       // Return formatted response to client
       const responseObj = {
-        response: fullResponse || 'No response from model',
+        response: finalResponse || 'No response from model',
         model: DEFAULT_LOCAL_MODEL,
         userId: userIdToUse,
         context: contextToUse,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        toolUsed: toolUsed
       };
       
       console.log('Returning response object:', responseObj);
@@ -140,7 +190,7 @@ app.post('/chat', async (req, res) => {
 /**
  * Helper function to generate a response from Ollama
  * @param {string} message - The message to send to Ollama
- * @returns {Promise<string>} - The response from Ollama
+ * @returns {Promise<{response: string, toolUsed: boolean}>} - The response from Ollama and whether a tool was used
  */
 async function generateOllamaResponse(message) {
   try {
@@ -199,7 +249,60 @@ async function generateOllamaResponse(message) {
     });
     
     console.log('Combined response:', fullResponse);
-    return fullResponse || 'No response from model';
+    
+    // Check if the LLM response contains a tool call (JSON format)
+    let toolResponse = null;
+    let finalResponse = fullResponse;
+    let toolUsed = false;
+    
+    try {
+      // Try to parse the response as JSON
+      const parsedResponse = JSON.parse(fullResponse.trim());
+      
+      // Check if it contains a tool name and parameters
+      if (parsedResponse.tool) {
+        console.log(`Tool call detected: ${parsedResponse.tool}`);
+        
+        // Get the tool definition
+        const tool = getTool(parsedResponse.tool);
+        
+        if (!tool) {
+          // Tool not found
+          finalResponse = `I tried to use the tool '${parsedResponse.tool}', but it doesn't exist. Here's what I know without using the tool: ${parsedResponse.fallback || "I'm unable to complete this request without the proper tool."}`;
+        } else if (!tool.endpoint) {
+          // Tool has no endpoint
+          finalResponse = `I tried to use the tool '${parsedResponse.tool}', but it doesn't have a valid endpoint. Here's what I know without using the tool: ${parsedResponse.fallback || "I'm unable to complete this request without a working tool."}`;
+        } else {
+          // Call the tool endpoint with the parameters
+          try {
+            console.log(`Calling tool endpoint: ${tool.endpoint}`);
+            const toolCallResponse = await axios.post(tool.endpoint, parsedResponse.parameters || {});
+            
+            // Successfully called the tool
+            toolResponse = toolCallResponse.data;
+            toolUsed = true;
+            
+            // Update the final response with the tool response
+            if (typeof toolResponse === 'object') {
+              finalResponse = `I used the ${tool.name} tool and got the following result:\n\n${JSON.stringify(toolResponse, null, 2)}`;
+            } else {
+              finalResponse = `I used the ${tool.name} tool and got the following result:\n\n${toolResponse}`;
+            }
+          } catch (toolError) {
+            console.error(`Error calling tool endpoint: ${toolError.message}`);
+            finalResponse = `I tried to use the tool '${parsedResponse.tool}', but encountered an error: ${toolError.message}. Here's what I know without using the tool: ${parsedResponse.fallback || "I'm unable to complete this request due to a tool error."}`;
+          }
+        }
+      }
+    } catch (jsonError) {
+      // Not JSON, just use the text response as is
+      console.log('Response is not in JSON format, using as text');
+    }
+    
+    return {
+      response: finalResponse || 'No response from model',
+      toolUsed
+    };
   } catch (error) {
     console.error('Error generating Ollama response:', error.message);
     throw error;
@@ -265,11 +368,16 @@ app.post('/telegram', async (req, res) => {
                 {
                   chat_id: chatId,
                   message_id: thinkingMsgId,
-                  text: llmResponse,
+                  text: llmResponse.response,
                   parse_mode: 'Markdown'
                 }
               );
               console.log(`Updated "Thinking..." message with LLM response in chat ${chatId}`);
+              
+              // Log whether a tool was used
+              if (llmResponse.toolUsed) {
+                console.log(`Tool was used in response to message from chat ${chatId}`);
+              }
             } catch (editError) {
               console.error('Error editing message, sending new message instead:', editError.message);
               
@@ -278,7 +386,7 @@ app.post('/telegram', async (req, res) => {
                 `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
                 {
                   chat_id: chatId,
-                  text: llmResponse,
+                  text: llmResponse.response,
                   parse_mode: 'Markdown'
                 }
               );
@@ -290,7 +398,7 @@ app.post('/telegram', async (req, res) => {
               `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
               {
                 chat_id: chatId,
-                text: llmResponse,
+                text: llmResponse.response,
                 parse_mode: 'Markdown'
               }
             );

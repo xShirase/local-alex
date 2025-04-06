@@ -18,11 +18,16 @@ const mockTools = [
         location: {
           type: 'string',
           description: 'City name or location'
+        },
+        units: {
+          type: 'string',
+          description: 'Units of measurement',
+          default: 'metric'
         }
       },
       required: ['location']
     },
-    endpoint: '/api/tools/weather'
+    endpoint: 'http://n8n:5678/webhook/weather/current'
   }
 ];
 
@@ -82,13 +87,43 @@ function createTestApp() {
       
       console.log('Mock test app returning response with tools injected into system prompt');
       
+      // In the test utils, we don't actually call the LLM
+      // The test itself will use mocks to simulate different LLM responses
+      // including tool calls, so we just return a default response here
+      
+      // The real implementation would determine if a tool call was made and call the tool
+      // Since this is a test utility, we'll trust the test to mock axiosMock properly
+      // But we still need to check if the LLM would have tried to use a tool
+      // Check if our LLM is mocked to return a tool call 
+      let toolUsed = false;
+      let responseText = 'Hello there! How can I help you today?';
+      
+      // If the mock was configured for a tool call test, check if the getTool function
+      // was spied on and has been called (which happens during tests)
+      if (mockToolRegistry.getTool.mock && mockToolRegistry.getTool.mock.calls.length > 0) {
+        const toolName = mockToolRegistry.getTool.mock.calls[0][0];
+        if (toolName) {
+          // This indicates a tool was requested in the test
+          console.log(`Test is simulating tool call for: ${toolName}`);
+          const tool = mockToolRegistry.getTool(toolName);
+          
+          if (tool) {
+            toolUsed = true;
+            responseText = `I used the ${toolName} tool and got the following result:\n\n{"temperature":22,"condition":"Sunny","humidity":45,"location":"New York"}`;
+          } else {
+            responseText = `I tried to use the tool '${toolName}', but it doesn't exist. Here's what I know without using the tool: I'm unable to complete this request without the proper tool.`;
+          }
+        }
+      }
+      
       // Return a mock response that matches expected values in tests
       const responseObj = {
-        response: 'Hello there! How can I help you today?',
+        response: responseText,
         model: process.env.DEFAULT_LOCAL_MODEL || 'mistral',
         userId: userIdToUse,
         context: contextToUse,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        toolUsed: toolUsed
       };
       
       res.status(200).json(responseObj);

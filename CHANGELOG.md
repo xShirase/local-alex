@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.2] - 2025-04-06
+
+### Added
+- Memory query API
+  - New `/query` GET endpoint to search stored memories
+  - Accepts query string, user ID, and context parameters
+  - Returns matching documents with relevance scores and metadata
+  - Supports filtering by user and context
+
 ## [0.2.1] - 2025-04-06
 
 ### Added

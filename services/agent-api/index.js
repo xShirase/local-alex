@@ -366,6 +366,41 @@ app.post('/remember', async (req, res) => {
   }
 });
 
+/**
+ * Memory query endpoint
+ * Retrieves memories from ChromaDB based on search parameters
+ */
+app.get('/query', async (req, res) => {
+  try {
+    const { q, userId, context } = req.query;
+    
+    console.log(`Querying memories with params: q=${q}, userId=${userId}, context=${context}`);
+    
+    // Query memories using the memory module
+    const results = await queryMemory({
+      q,
+      userId,
+      context
+    });
+    
+    console.log(`Found ${results.length} matching memories`);
+    
+    // Return the query results
+    res.status(200).json({
+      query: q,
+      filters: {
+        userId,
+        context
+      },
+      count: results.length,
+      results
+    });
+  } catch (error) {
+    console.error('Error in /query endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`MCP Agent API running on port ${PORT}`);

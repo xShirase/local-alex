@@ -10,6 +10,8 @@ mcp-agent-server/
 ├── services/
 │   ├── agent-api/           # Core orchestration service
 │   │   ├── index.js         # Main API entry point with REST API and Telegram integration
+│   │   ├── memory/          # Memory management modules
+│   │   │   └── memory.js    # ChromaDB integration for memory storage and retrieval
 │   │   ├── package.json     # Node.js dependencies
 │   │   └── Dockerfile       # Container build instructions
 │   ├── n8n/                 # Workflow automation engine
@@ -67,6 +69,8 @@ The agent-api service exposes these main endpoints:
 - `GET /health` - Health check endpoint
 - `POST /chat` - Core chat API for direct integration
 - `POST /telegram` - Webhook endpoint for Telegram bot integration
+- `POST /remember` - Store memories directly in ChromaDB
+- `GET /query` - Retrieve and search stored memories
 
 ## Future Extensions
 

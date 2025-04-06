@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "MCP Agent API - Core orchestration service for the AI agent",
   "main": "index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",

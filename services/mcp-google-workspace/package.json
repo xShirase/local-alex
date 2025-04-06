@@ -4,6 +4,9 @@
   "description": "Google Workspace OAuth MCP Server for Google Workspace integration",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "bin": {
     "google-workspace-mcp": "./build/index.js"
   },

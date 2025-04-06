@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   #######################################
   # n8n - Workflow Automation Engine
@@ -105,6 +103,9 @@ services:
     environment:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_MCP_PORT=${GOOGLE_MCP_PORT}
+      - WORKSPACE_BASE_PATH=${WORKSPACE_BASE_PATH}
+      - PORT=8700
     networks:
       - mcp-network
 

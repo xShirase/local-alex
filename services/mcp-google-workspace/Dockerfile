@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 
 # Build stage
-FROM --platform=$BUILDPLATFORM node:18 AS builder
+FROM --platform=$BUILDPLATFORM node:20 AS builder
 WORKDIR /app
 
 # Add metadata
@@ -20,7 +20,7 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     npm run build
 
 # Production stage
-FROM node:18 AS production
+FROM node:20 AS production
 WORKDIR /app
 
 # Set docker hash as environment variable

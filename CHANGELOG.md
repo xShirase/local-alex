@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.2.7] - 2025-04-06
+
+### Added
+- Google Workspace MCP Integration
+  - Added Google Workspace MCP as a containerized service
+  - Integrated Gmail, Google Calendar, and Google Drive APIs
+  - Added configuration for OAuth authentication with Google
+  - Created documentation for setup and usage
+- Updated docker-compose.yml with new service
+- Added environment variables for Google Workspace MCP
+
+## [0.2.6] - 2025-04-06
+
+### Added
+- Tool invocation capability
+  - Implemented parsing of LLM responses for JSON-formatted tool calls
+  - Added support for dynamic tool execution via webhook endpoints
+  - Added validation of tool existence and endpoint availability
+  - Enhanced response formatting with tool results
+  - Added error handling for tool invocation failures
+- Improved Telegram integration
+  - Updated Telegram webhook to support tool invocations
+  - Added logging for tool usage in Telegram responses
+- Enhanced test suite
+  - Added comprehensive tests for tool invocation functionality
+  - Created mock implementations for testing tool calls
+  - Improved test utilities for simulating various tool scenarios
+
 ## [0.2.5] - 2025-04-06
 
 ### Added

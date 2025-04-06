@@ -200,6 +200,51 @@ app.post('/telegram', async (req, res) => {
       // We continue even if the thinking message failed
     }
     
+    // Store the message in ChromaDB (non-blocking)
+    try {
+      const collectionName = "messages";
+      
+      // First, check if collection exists, create if it doesn't
+      try {
+        // Check if collection exists
+        await axios.get(`${CHROMA_HOST}/api/v1/collections/${collectionName}`);
+        console.log(`Collection "${collectionName}" found in ChromaDB`);
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          // Collection doesn't exist, create it
+          await axios.post(`${CHROMA_HOST}/api/v1/collections`, {
+            name: collectionName,
+            metadata: { description: "User messages from various sources" }
+          });
+          console.log(`Created collection "${collectionName}" in ChromaDB`);
+        } else {
+          // Some other error occurred
+          throw error;
+        }
+      }
+      
+      // Prepare the record to insert
+      const timestamp = new Date().toISOString();
+      const record = {
+        ids: [`telegram-${chatId}-${timestamp}`],
+        embeddings: [[0.1, 0.2, 0.3]], // Placeholder embedding
+        metadatas: [{
+          source: "telegram",
+          chatId: chatId.toString(),
+          userId: "g", // Hardcoded for now
+          timestamp: timestamp
+        }],
+        documents: [messageText]
+      };
+      
+      // Insert the record into ChromaDB
+      await axios.post(`${CHROMA_HOST}/api/v1/collections/${collectionName}/add`, record);
+      console.log(`Stored Telegram message in ChromaDB collection "${collectionName}"`);
+    } catch (chromaError) {
+      console.error('Error storing message in ChromaDB:', chromaError.message);
+      // Non-blocking - continue with LLM processing even if ChromaDB insert fails
+    }
+    
     // Process the message with the LLM asynchronously
     generateOllamaResponse(messageText)
       .then(async (llmResponse) => {
